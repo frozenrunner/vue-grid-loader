@@ -4,8 +4,6 @@
     <meta charset="utf-8">
     <title></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.2.3/css/bulma.css">
-    <link rel="stylesheet" href="http://code.jquery.com/ui/1.12.1/themes/start/jquery-ui.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/free-jqgrid/4.13.6/css/ui.jqgrid.min.css">
   </head>
   <body>
     <nav class="nav has-shadow">
@@ -22,13 +20,9 @@
       </div>
     </nav>
     <div id="root" class="csv-data container">
-      <input @change="readFile" id="fileInput" type="file">
-      <table id="testGrid">
-      </table>
+      <input id="fileInput" type="file" @change="readFile" >
+      <vue-grid :init-csv-data="csvTableData"></vue-grid>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
-    <script src="http://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/free-jqgrid/4.13.6/js/jquery.jqgrid.min.js"></script>
     <script src="https://unpkg.com/vue@2.1.8/dist/vue.js"></script>
     <script src="vue-grid.js"></script>
   </body>
