@@ -1,63 +1,102 @@
 Vue.component('vue-grid',{
-  template: `<table id="testGrid" class="table is-bordered is-striped">
-    <thead>
-      <tr>
-        <th v-for="header in tableHeader">
-          {{header}}
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="tableRow in tableData">
-        <td @click="renderInput($event)" v-for="data in tableRow">
-          {{data}}
-        </td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td v-show="dataLoaded" v-for="foot in tableFooter">
-          {{foot}}
-        </td>
-      </tr>
-    </tfoot>
-  </table>`,
-  props: ['initCsvData'],
+  template: `
+  <div v-show="dataLoaded" class="box">
+    <table id="testGrid" class="table is-bordered is-striped has-shadow">
+      <thead>
+        <tr>
+          <th v-for="header in tableHeader">
+            {{header}}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(tableRow, rowId) in tableData">
+          <td @click="renderInput(rowId+1, parseInt(colId), $event)" v-for="(data, colId) in tableRow">
+            <span :id="getSpanId(rowId+1, colId)">{{data}}</span>
+            <input :id="getInputId(rowId+1, colId)" class="input" @keyup.enter="saveInput" @keyup.esc="revertInput(rowId+1, parseInt(colId))" style="display: none;" v-model="initCsvData[rowId+1][colId]"/>
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th v-show="dataLoaded" v-for="foot in tableFooter">
+            {{foot}}
+          </th>
+        </tr>
+      </tfoot>
+    </table>
+  </card>`,
+  props: ['initCsvData', 'data'],
   data() {
       return {
         highlightedRow: '',
         dataLoaded: false,
+        isInputActive: false,
         activeInput: null,
+        activeSpan: null,
+        oldValue: ''
       }
   },
   methods: {
-    renderInput(event) {
-      if (this.activeInput == null){
-        var input = document.createElement("input");
-        var target = event.target;
-        input.value = event.target.textContent.trim();
-        event.target.textContent = '';
-        event.target.appendChild(input);
-        var vueComponent = this;
-        input.addEventListener("blur", function() {
-          var textNode = document.createTextNode(input.value)
-          target.removeChild(input);
-          target.appendChild(textNode);
-          vueComponent.activeInput = null;
-        })
-        this.activeInput = input
+    getInputId(rowId, colId) {
+      return 'vgInput_' + rowId + '_' + colId;
+    },
+    getSpanId(rowId, colId) {
+      return 'vgSpan_' + rowId + '_' + colId;
+    },
+    renderInput(rowId, colId, event) {
+      if (!this.isInputActive) {
+        var activeInput;
+        var activeSpan;
+
+        if (event.target.tagName === 'SPAN') { //replace with switch?
+          activeSpan = event.target;
+          activeInput = event.target.parentNode.querySelector('input');
+        } else if (event.target.tagName ==='INPUT') {
+          activeInput = event.target;
+          activeSpan = event.target.parentNode.querySelector('span');
+        } else {
+          activeSpan = event.target.querySelector('span');
+          activeInput = event.target.querySelector('input');
+        }
+
+        activeInput.style.display = 'inline';
+        activeSpan.style.display = 'none';
+        this.oldValue = this.initCsvData[rowId][colId];
+
+        this.isInputActive = true;
+        this.activeSpan = activeSpan;
+        this.activeInput = activeInput;
+        this.activeInput.focus();
+      } else {
+        if (event.target.tagName !=='INPUT'){
+          this.saveInput();
+          this.renderInput(rowId, colId, event);
+        }
       }
+    },
+    saveInput(){
+      this.activeSpan.style.display = 'inline';
+      this.activeInput.style.display = 'none';
+      this.activeSpan = null;
+      this.activeInput = null;
+      this.isInputActive = false;
+    },
+    revertInput(rowId, colId) {
+      this.initCsvData[rowId][colId] = this.oldValue;
+      this.oldValue = '';
+      this.saveInput();
     }
   },
   computed: {
-    tableHeader: function(){
+    tableHeader() {
       return this.initCsvData[0];
     },
-    tableData: function() {
+    tableData() {
       var tempCsvData = this.initCsvData;
       return tempCsvData.slice(1,51);
     },
-    tableFooter: function() {
+    tableFooter() {
       var footer = {};
       var length = 0, width = 0, height = 0, price = 0;
       for (var i = 1, len = this.initCsvData.length-1; i < len; i++){
@@ -76,7 +115,6 @@ Vue.component('vue-grid',{
       footer[7] = '';
       footer[8] = '';
       footer[9] = '';
-      footer[10] = '';
       if (this.initCsvData.length > 0) {
         this.dataLoaded = true
       }
@@ -105,7 +143,7 @@ var Test = new Vue({
       }
       reader.readAsText(file);
     },
-    processData(csv){
+    processData(csv) {
       var allTextLines = csv.split(/\r\n|\n/);
       var lines = [];
       for (var i=0; i<allTextLines.length; i++) {
